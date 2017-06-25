@@ -798,16 +798,16 @@ refine0:
 
 static int r128__ucmp(const R128 *a, const R128 *b)
 {
-   if (a->hi == b->hi) {
+   if (a->hi != b->hi) {
       if (a->hi > b->hi) {
          return 1;
       } else {
          return -1;
       }
-   } else if (a->lo == b->lo) {
-      return 0;
    } else {
-      if (a->lo > b->lo) {
+      if (a->lo == b->lo) {
+         return 0;
+      } else if (a->lo > b->lo) {
          return 1;
       } else {
          return -1;

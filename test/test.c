@@ -231,7 +231,7 @@ static void test_div()
    R128_SET2(&a, R128_LIT_U64(0x000022ef000023510), R128_LIT_U64(97276714306369));
    R128_SET2(&b, R128_LIT_U64(0x00006b3700000000), R128_LIT_U64(23806));
    r128Div(&c, &a, &b);
-   R128_TEST_STREQ(c, "4086226761.331427244340973807968245");
+   R128_TEST_STREQ(c, "4086226761.33142724434097380796");
 
    R128_SET2(&a, 0, 10);
    R128_SET2(&b, 0, 3);
@@ -241,7 +241,7 @@ static void test_div()
    R128_SET2(&a, 0, R128_LIT_U64(2113123919594));
    R128_SET2(&b, 0, R128_LIT_U64(0xffffffffffffd159));
    r128Div(&c, &a, &b);
-   R128_TEST_STREQ(c, "-176934096.92656786402076530185046");
+   R128_TEST_STREQ(c, "-176934096.92656786402076530185");
 
    R128_SET2(&a, 0, R128_LIT_U64(62727997390472));
    R128_SET2(&b, 0, R128_LIT_U64(154));
@@ -251,7 +251,7 @@ static void test_div()
    r128FromInt(&a, 100);
    r128FromString(&b, "10.003048780487804878", NULL);
    r128Div(&c, &a, &b);
-   R128_TEST_STREQ(c, "9.9969521487351417251325666669856");
+   R128_TEST_STREQ(c, "9.99695214873514172513");
 
    r128Copy(&a, &R128_one);
    r128Shr(&a, &a, 2);
@@ -348,6 +348,27 @@ static void test_shift()
    R128_TEST_EQ4(b, 0xa0000000, 0xffffffff, 0xffffffff, 0xffffffff);
 }
 
+static void test_sqrt()
+{
+   R128 a, b;
+
+   r128FromInt(&a, 100);
+   r128Sqrt(&b, &a);
+   R128_TEST_STREQ(b, "10");
+
+   r128FromInt(&a, 2);
+   r128Sqrt(&b, &a);
+   R128_TEST_STREQ(b, "1.41421356237309504880");
+
+   r128FromFloat(&a, 0.125);
+   r128Sqrt(&b, &a);
+   R128_TEST_STREQ(b, "0.35355339059327376220");
+
+   r128FromFloat(&a, 0.999);
+   r128Rsqrt(&b, &a);
+   R128_TEST_STREQ(b, "1.00050037531277368426");
+}
+
 int main()
 {
    R128 a, b, c;
@@ -364,6 +385,7 @@ int main()
    test_mod();
    test_div();
    test_shift();
+   test_sqrt();
 
    printf("%d tests run. %d tests passed. %d tests failed.\n",
       testsRun, testsRun - testsFailed, testsFailed);

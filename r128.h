@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.0
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.1.0
 
 COMPILATION
 -----------
@@ -33,22 +33,22 @@ LICENSE
 -------
 Copyright (c) 2017 F. Alan Hickman
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of 
-this software and associated documentation files (the "Software"), to deal in 
-the Software without restriction, including without limitation the rights to 
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies 
-of the Software, and to permit persons to whom the Software is furnished to do 
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
 so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all 
+The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
@@ -79,7 +79,7 @@ SOFTWARE.
 #ifdef __cplusplus
 extern "C" {
 #endif
- 
+
 typedef struct R128 {
    R128_U64 lo;
    R128_U64 hi;
@@ -139,6 +139,9 @@ extern void r128Mul(R128 *dst, const R128 *a, const R128 *b);  // a * b
 extern void r128Div(R128 *dst, const R128 *a, const R128 *b);  // a / b
 extern void r128Mod(R128 *dst, const R128 *a, const R128 *b);  // a - toInt(a / b) * b
 
+extern void r128Sqrt(R128 *dst, const R128 *v);  // sqrt(v)
+extern void r128Rsqrt(R128 *dst, const R128 *v); // 1 / sqrt(v)
+
 // Comparison
 extern int  r128Cmp(const R128 *a, const R128 *b);  // sign of a-b
 extern void r128Min(R128 *dst, const R128 *a, const R128 *b);
@@ -185,7 +188,7 @@ typedef struct R128ToStringFormat {
 } R128ToStringFormat;
 
 // r128ToStringOpt: convert R128 to a decimal string, with formatting.
-// 
+//
 // dst and dstSize: specify the buffer to write into. At most dstSize bytes will be written
 // (including null terminator). No additional rounding is performed if dstSize is not large
 // enough to hold the entire string.
@@ -205,7 +208,7 @@ typedef struct R128ToStringFormat {
 extern int r128ToStringOpt(char *dst, size_t dstSize, const R128 *v, const R128ToStringFormat *opt);
 
 // r128ToStringf: convert R128 to a decimal string, with formatting.
-// 
+//
 // dst and dstSize: specify the buffer to write into. At most dstSize bytes will be written
 // (including null terminator).
 //
@@ -230,7 +233,7 @@ extern int r128ToStringf(char *dst, size_t dstSize, const char *format, const R1
 //
 // Uses the R128_decimal global as the decimal point character.
 // Always writes a null terminator, even if the destination buffer is not large enough.
-// 
+//
 // Will write at most 43 bytes (including NUL) to dst.
 //
 // Returns the number of characters written, not including the final null terminator.
@@ -1839,6 +1842,97 @@ void r128Mod(R128 *dst, const R128 *a, const R128 *b)
 
    r128Mul(&tq, &tq, b);
    r128Sub(dst, a, &tq);
+}
+
+void r128Rsqrt(R128 *dst, const R128 *v)
+{
+   static const R128 threeHalves = { R128_LIT_U64(0x8000000000000000), 1 };
+   R128 x, est;
+   int i;
+
+   if ((R128_S64)v->hi < 0) {
+      r128Copy(dst, &R128_min);
+      return;
+   }
+
+   r128Copy(&x, v);
+
+   // get initial estimate
+   if (x.hi) {
+      int shift = (64 + r128__clz64(x.hi)) >> 1;
+      est.lo = R128_LIT_U64(1) << shift;
+      est.hi = 0;
+   } else if (x.lo) {
+      int shift = r128__clz64(x.lo) >> 1;
+      est.hi = R128_LIT_U64(1) << shift;
+      est.lo = 0;
+   } else {
+      R128_SET2(dst, 0, 0);
+      return;
+   }
+
+   // x /= 2
+   r128Shr(&x, &x, 1);
+
+   // Newton-Raphson iterate
+   for (i = 0; i < 20; ++i) {
+      R128 newEst;
+
+      // newEst = est * (threeHalves - (x / 2) * est * est);
+      r128__umul(&newEst, &est, &est);
+      r128__umul(&newEst, &newEst, &x);
+      r128Sub(&newEst, &threeHalves, &newEst);
+      r128__umul(&newEst, &est, &newEst);
+
+      if (newEst.lo == est.lo && newEst.hi == est.hi) {
+         break;
+      }
+      r128Copy(&est, &newEst);
+   }
+
+   r128Copy(dst, &est);
+}
+
+void r128Sqrt(R128 *dst, const R128 *v)
+{
+   R128 x, est;
+   int i;
+
+   if ((R128_S64)v->hi < 0) {
+      r128Copy(dst, &R128_min);
+      return;
+   }
+
+   r128Copy(&x, v);
+
+   // get initial estimate
+   if (x.hi) {
+      int shift = (63 - r128__clz64(x.hi)) >> 1;
+      r128Shr(&est, &x, shift);
+   } else if (x.lo) {
+      int shift = (1 + r128__clz64(x.lo)) >> 1;
+      r128Shl(&est, &x, shift);
+   } else {
+      R128_SET2(dst, 0, 0);
+      return;
+   }
+
+   // Newton-Raphson iterate
+   for (i = 0; i < 7; ++i) {
+      R128 newEst;
+
+      // newEst = (est + x / est) / 2
+      r128__udiv(&newEst, &x, &est);
+      r128Add(&newEst, &newEst, &est);
+      r128Shr(&newEst, &newEst, 1);
+
+      if (newEst.lo == est.lo && newEst.hi == est.hi) {
+         break;
+      }
+      r128Copy(&est, &newEst);
+   }
+
+   r128Copy(dst, &est);
 }
 
 int r128Cmp(const R128 *a, const R128 *b)

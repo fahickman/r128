@@ -11,6 +11,7 @@ fixed-point quantities. Including:
 * Bitwise operations (and, or, xor, not, shift)
 * Comparison (min, max, floor, ceiling)
 * Conversion (to and from floating point and ASCII/UTF-8 string)
+* Square root and reciprocal square root
 
 Why fixed point?
 ----------------

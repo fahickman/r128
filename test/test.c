@@ -37,17 +37,17 @@ static int testsRun, testsFailed;
    if ((v).lo != r0 || (v).hi != r1) { \
       PRINT_FAILURE("%s(%d): TEST FAILED: Got 0x%08x%08x.%08x%08x, expected 0x%08x%08x.%08x%08x\n", \
          __FILE__, __LINE__, R128_R3(&(v)), R128_R2(&(v)), R128_R1(&(v)), R128_R0(&(v)), \
-         (uint32_t)((r1) >> 32), (uint32_t)(r1), (uint32_t)((r0) >> 32), (uint32_t)(r0)); \
+         (R128_U32)((R128_U64)(r1) >> 32), (R128_U32)(r1), (R128_U32)((R128_U64)(r0) >> 32), (R128_U32)(r0)); \
       ++testsFailed; \
    }\
 } while(0)
 
 #define R128_TEST_EQ4(v, r0, r1, r2, r3) do { \
    ++testsRun; \
-   if ((v).lo != (((uint64_t)(r1) << 32) | (r0)) || (v).hi != (((uint64_t)(r3) << 32) | (r2))) { \
+   if ((v).lo != (((R128_U64)(r1) << 32) | (r0)) || (v).hi != (((R128_U64)(r3) << 32) | (r2))) { \
       PRINT_FAILURE("%s(%d): TEST FAILED: Got 0x%08x%08x.%08x%08x, expected 0x%08x%08x.%08x%08x\n", \
          __FILE__, __LINE__, R128_R3(&(v)), R128_R2(&(v)), R128_R1(&(v)), R128_R0(&(v)), \
-         (r3), (r2), (r1), (r0)); \
+         (R128_U32)(r3), (R128_U32)(r2), (R128_U32)(r1), (R128_U32)(r0)); \
       ++testsFailed; \
    }\
 } while(0)
@@ -248,10 +248,24 @@ static void test_div()
    r128Div(&c, &a, &b);
    R128_TEST_STREQ(c, "407324658379.68831168831168831169");
 
+   r128FromInt(&a, 100);
+   r128FromString(&b, "10.003048780487804878", NULL);
+   r128Div(&c, &a, &b);
+   R128_TEST_STREQ(c, "9.9969521487351417251325666669856");
+
    r128Copy(&a, &R128_one);
    r128Shr(&a, &a, 2);
    r128Div(&c, &a, &R128_min);
    R128_TEST_FLEQ(c, 0);
+
+   r128Copy(&b, &R128_one);
+   r128Shr(&b, &b, 1);     // b = .5
+   r128Shr(&a, &b, 1);     // a = .25
+   r128Div(&c, &a, &b);
+   R128_TEST_EQ(c, b);
+
+   r128Div(&c, &b, &a);
+   R128_TEST_EQ2(c, 0, 2);
 
    r128Div(&c, &R128_one, &R128_smallest);
    R128_TEST_EQ(c, R128_max);

@@ -896,7 +896,7 @@ static int r128__norm(R128 *n, R128 *d, R128_U64 *n2)
       }
    } else {
       shift = r128__clz64(d0);
-      if (r128__clz64(n1) >= shift) {
+      if (r128__clz64(n1) <= shift) {
          return 1; // overflow
       }
 

@@ -69,6 +69,6 @@ will be much worse than on a 64-bit system.
 
 License and Thanks
 ------------------
-R128 is licensed under an MIT-style license. See LICENSE for details.
+R128 is released into the public domain. See LICENSE for details.
 
 Special thanks go to Sean Barrett for developing the single-file library idea.

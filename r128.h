@@ -203,8 +203,8 @@ typedef struct R128ToStringFormat {
 //
 // Number of bytes that will be written (i.e. how big does dst need to be?):
 // If width is specified: width + 1 bytes.
-// If precision is specified: at most precision + 23 bytes.
-// If neither is specified: at most 43 bytes.
+// If precision is specified: at most precision + 22 bytes.
+// If neither is specified: at most 42 bytes.
 //
 // Returns the number of characters written, not including the final null terminator.
 //
@@ -224,8 +224,8 @@ extern int r128ToStringOpt(char *dst, size_t dstSize, const R128 *v, const R128T
 // Always writes a null terminator, even if the destination buffer is not large enough.
 //
 // Number of bytes that will be written (i.e. how big does dst need to be?):
-// If the precision field is specified: at most max(width, precision + 22) + 1 bytes
-// Otherwise: at most max(width, 42) + 1 bytes.
+// If the precision field is specified: at most max(width, precision + 21) + 1 bytes
+// Otherwise: at most max(width, 41) + 1 bytes.
 //
 // Returns the number of characters written, not including the final null terminator.
 //
@@ -237,7 +237,7 @@ extern int r128ToStringf(char *dst, size_t dstSize, const char *format, const R1
 // Uses the R128_decimal global as the decimal point character.
 // Always writes a null terminator, even if the destination buffer is not large enough.
 //
-// Will write at most 43 bytes (including NUL) to dst.
+// Will write at most 42 bytes (including NUL) to dst.
 //
 // Returns the number of characters written, not including the final null terminator.
 //

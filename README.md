@@ -55,6 +55,14 @@ functions are marked static inline, so r128.h can be included in both C and C++
 source files. The source file that defines R128_IMPLEMENTATION can be either C
 or C++.
 
+Debugging
+---------
+Visualizing R128 values in a debugger can be difficult. To help with this, in
+the R128_IMPLEMENTATION file, you can define R128_DEBUG_VIS to enable a global
+variable called R128_last, which will contain the results of the last r128
+function call as a string. You can watch this variable in the debugger as you
+step through code.
+
 Performance
 -----------
 Fixed-point uses integer machine instructions, which on most modern processors

@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 
 #define R128_IMPLEMENTATION
+#define R128_DEBUG_VIS
 #include "../r128.h"
 
 #include <math.h>
@@ -371,14 +372,6 @@ static void test_sqrt()
 
 int main()
 {
-   R128 a, b, c;
-
-   a.hi = 97276714306369ull;
-   a.lo = 0x000022ef000023510ull;
-   b.hi = 23806;
-   b.lo = 0x00006b3700000000ull;
-   r128Div(&c, &a, &b);
-
    test_float();
    test_string();
    test_cmp();

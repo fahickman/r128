@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.1.0
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.2.0
 
 COMPILATION
 -----------
@@ -522,6 +522,12 @@ static inline bool operator!=(const R128 &lhs, const R128 &rhs)
 
 #ifdef R128_IMPLEMENTATION
 
+#ifdef R128_DEBUG_VIS
+#  define R128_DEBUG_SET(x)   r128ToString(R128_last, sizeof(R128_last), x)
+#else
+#  define R128_DEBUG_SET(x)
+#endif
+
 #define R128_SET2(x, l, h) do { (x)->lo = (R128_U64)(l); (x)->hi = (R128_U64)(h); } while(0)
 #define R128_R0(x) ((R128_U32)(x)->lo)
 #define R128_R2(x) ((R128_U32)(x)->hi)
@@ -595,6 +601,9 @@ const R128 R128_smallest = { 1, 0 };
 const R128 R128_zero = { 0, 0 };
 const R128 R128_one = { 0, 1 };
 char R128_decimal = '.';
+#ifdef R128_DEBUG_VIS
+char R128_last[42];
+#endif
 
 static int r128__clz64(R128_U64 x)
 {
@@ -655,6 +664,36 @@ static R128_U32 r128__udiv64(R128_U32 nlo, R128_U32 nhi, R128_U32 d, R128_U32 *r
 #  endif
 }
 #endif   //!R128_64BIT
+
+static void r128__neg(R128 *dst, const R128 *src)
+{
+   unsigned char carry = 0;
+
+   R128_ASSERT(dst != NULL);
+   R128_ASSERT(src != NULL);
+
+#if R128_INTEL
+#  if R128_64BIT
+   carry = _addcarry_u64(carry, ~src->lo, 1, &dst->lo);
+   carry = _addcarry_u64(carry, ~src->hi, 0, &dst->hi);
+#  else
+   R128_U32 r0, r1, r2, r3;
+   carry = _addcarry_u32(carry, ~R128_R0(src), 1, &r0);
+   carry = _addcarry_u32(carry, ~R128_R1(src), 0, &r1);
+   carry = _addcarry_u32(carry, ~R128_R2(src), 0, &r2);
+   carry = _addcarry_u32(carry, ~R128_R3(src), 0, &r3);
+   R128_SET4(dst, r0, r1, r2, r3);
+#  endif //R128_64BIT
+#else
+   if (src->lo) {
+      dst->lo = ~src->lo + 1;
+      dst->hi = ~src->hi;
+   } else {
+      dst->lo = 0;
+      dst->hi = ~src->hi + 1;
+   }
+#endif   //R128_INTEL
+}
 
 // 64*64->128
 static void r128__umul128(R128 *dst, R128_U64 a, R128_U64 b)
@@ -872,7 +911,7 @@ static void r128__umul(R128 *dst, const R128 *a, const R128 *b)
    p3.hi = p3.lo; p3.lo = 0; //r128Shl(&p3, &p3, 64);
    r128Add(&p0, &p0, &p3);
 
-   r128Copy(dst, &p0);
+   R128_SET2(dst, p0.lo, p0.hi);
 #endif
 }
 
@@ -941,10 +980,10 @@ static void r128__udiv(R128 *quotient, const R128 *dividend, const R128 *divisor
    // scale dividend and normalize
    {
       R128 n, d;
-      r128Copy(&n, dividend);
-      r128Copy(&d, divisor);
+      R128_SET2(&n, dividend->lo, dividend->hi);
+      R128_SET2(&d, divisor->lo, divisor->hi);
       if (r128__norm(&n, &d, &n3)) {
-         r128Copy(quotient, &R128_max);
+         R128_SET2(quotient, R128_max.lo, R128_max.hi);
          return;
       }
 
@@ -1005,7 +1044,7 @@ refine1:
       }
    }
 
-   r128Copy(quotient, &q);
+   R128_SET2(quotient, q.lo, q.hi);
 }
 
 static R128_U64 r128__umod(R128 *n, R128 *d)
@@ -1062,9 +1101,9 @@ static int r128__format(char *dst, size_t dstSize, const R128 *v, const R128ToSt
    R128_ASSERT(v != NULL);
    R128_ASSERT(format != NULL);
 
-   r128Copy(&tmp, v);
+   R128_SET2(&tmp, v->lo, v->hi);
    if (r128IsNeg(&tmp)) {
-      r128Neg(&tmp, &tmp);
+      r128__neg(&tmp, &tmp);
       sign = 1;
    }
 
@@ -1202,6 +1241,7 @@ void r128FromInt(R128 *dst, R128_S64 v)
    R128_ASSERT(dst != NULL);
    dst->lo = 0;
    dst->hi = (R128_U64)v;
+   R128_DEBUG_SET(dst);
 }
 
 void r128FromFloat(R128 *dst, double v)
@@ -1226,7 +1266,7 @@ void r128FromFloat(R128 *dst, double v)
       r.lo = (R128_U64)(v * 18446744073709551616.0);
 
       if (sign) {
-         r128Neg(&r, &r);
+         r128__neg(&r, &r);
       }
 
       r128Copy(dst, &r);
@@ -1316,7 +1356,7 @@ void r128FromString(R128 *dst, const char *s, char **endptr)
 
    R128_SET2(dst, lo, hi);
    if (sign) {
-      r128Neg(dst, dst);
+      r128__neg(dst, dst);
    }
 
    if (endptr) {
@@ -1338,9 +1378,9 @@ double r128ToFloat(const R128 *v)
 
    R128_ASSERT(v != NULL);
 
-   r128Copy(&tmp, v);
+   R128_SET2(&tmp, v->lo, v->hi);
    if (r128IsNeg(&tmp)) {
-      r128Neg(&tmp, &tmp);
+      r128__neg(&tmp, &tmp);
       sign = 1;
    }
 
@@ -1429,31 +1469,13 @@ void r128Copy(R128 *dst, const R128 *src)
    R128_ASSERT(src != NULL);
    dst->lo = src->lo;
    dst->hi = src->hi;
+   R128_DEBUG_SET(dst);
 }
 
 void r128Neg(R128 *dst, const R128 *src)
 {
-   unsigned char carry = 0;
-
-   R128_ASSERT(dst != NULL);
-   R128_ASSERT(src != NULL);
-
-#if R128_INTEL
-#  if R128_64BIT
-   carry = _addcarry_u64(carry, ~src->lo, 1, &dst->lo);
-   carry = _addcarry_u64(carry, ~src->hi, 0, &dst->hi);
-#  else
-   R128_U32 r0, r1, r2, r3;
-   carry = _addcarry_u32(carry, ~R128_R0(src), 1, &r0);
-   carry = _addcarry_u32(carry, ~R128_R1(src), 0, &r1);
-   carry = _addcarry_u32(carry, ~R128_R2(src), 0, &r2);
-   carry = _addcarry_u32(carry, ~R128_R3(src), 0, &r3);
-   R128_SET4(dst, r0, r1, r2, r3);
-#  endif //R128_64BIT
-#else
-   r128Not(dst, a);
-   r128Add(dst, dst, &R128_smallest);
-#endif   //R128_INTEL
+   r128__neg(dst, src);
+   R128_DEBUG_SET(dst);
 }
 
 void r128Not(R128 *dst, const R128 *src)
@@ -1463,6 +1485,7 @@ void r128Not(R128 *dst, const R128 *src)
 
    dst->lo = ~src->lo;
    dst->hi = ~src->hi;
+   R128_DEBUG_SET(dst);
 }
 
 void r128Or(R128 *dst, const R128 *a, const R128 *b)
@@ -1473,6 +1496,7 @@ void r128Or(R128 *dst, const R128 *a, const R128 *b)
 
    dst->lo = a->lo | b->lo;
    dst->hi = a->hi | b->hi;
+   R128_DEBUG_SET(dst);
 }
 
 void r128And(R128 *dst, const R128 *a, const R128 *b)
@@ -1483,6 +1507,7 @@ void r128And(R128 *dst, const R128 *a, const R128 *b)
 
    dst->lo = a->lo & b->lo;
    dst->hi = a->hi & b->hi;
+   R128_DEBUG_SET(dst);
 }
 
 void r128Xor(R128 *dst, const R128 *a, const R128 *b)
@@ -1493,6 +1518,7 @@ void r128Xor(R128 *dst, const R128 *a, const R128 *b)
 
    dst->lo = a->lo ^ b->lo;
    dst->hi = a->hi ^ b->hi;
+   R128_DEBUG_SET(dst);
 }
 
 void r128Shl(R128 *dst, const R128 *src, int amount)
@@ -1557,6 +1583,7 @@ void r128Shl(R128 *dst, const R128 *src, int amount)
 
    dst->lo = r[0];
    dst->hi = r[1];
+   R128_DEBUG_SET(dst);
 }
 
 void r128Shr(R128 *dst, const R128 *src, int amount)
@@ -1621,6 +1648,7 @@ void r128Shr(R128 *dst, const R128 *src, int amount)
 
    dst->lo = r[2];
    dst->hi = r[3];
+   R128_DEBUG_SET(dst);
 }
 
 void r128Sar(R128 *dst, const R128 *src, int amount)
@@ -1682,6 +1710,7 @@ void r128Sar(R128 *dst, const R128 *src, int amount)
 
    dst->lo = r[2];
    dst->hi = r[3];
+   R128_DEBUG_SET(dst);
 }
 
 void r128Add(R128 *dst, const R128 *a, const R128 *b)
@@ -1709,6 +1738,8 @@ void r128Add(R128 *dst, const R128 *a, const R128 *b)
    dst->lo = r;
    dst->hi = a->hi + b->hi + carry;
 #endif   //R128_INTEL
+
+   R128_DEBUG_SET(dst);
 }
 
 void r128Sub(R128 *dst, const R128 *a, const R128 *b)
@@ -1736,6 +1767,8 @@ void r128Sub(R128 *dst, const R128 *a, const R128 *b)
    dst->lo = r;
    dst->hi = a->hi - b->hi - borrow;
 #endif   //R128_INTEL
+
+   R128_DEBUG_SET(dst);
 }
 
 void r128Mul(R128 *dst, const R128 *a, const R128 *b)
@@ -1747,21 +1780,21 @@ void r128Mul(R128 *dst, const R128 *a, const R128 *b)
    R128_ASSERT(a != NULL);
    R128_ASSERT(b != NULL);
 
-   r128Copy(&ta, a);
-   r128Copy(&tb, b);
+   R128_SET2(&ta, a->lo, a->hi);
+   R128_SET2(&tb, b->lo, b->hi);
 
    if (r128IsNeg(&ta)) {
-      r128Neg(&ta, &ta);
+      r128__neg(&ta, &ta);
       sign = !sign;
    }
    if (r128IsNeg(&tb)) {
-      r128Neg(&tb, &tb);
+      r128__neg(&tb, &tb);
       sign = !sign;
    }
 
    r128__umul(&tc, &ta, &tb);
    if (sign) {
-      r128Neg(&tc, &tc);
+      r128__neg(&tc, &tc);
    }
 
    r128Copy(dst, &tc);
@@ -1776,11 +1809,11 @@ void r128Div(R128 *dst, const R128 *a, const R128 *b)
    R128_ASSERT(a != NULL);
    R128_ASSERT(b != NULL);
 
-   r128Copy(&tn, a);
-   r128Copy(&td, b);
+   R128_SET2(&tn, a->lo, a->hi);
+   R128_SET2(&td, b->lo, b->hi);
 
    if (r128IsNeg(&tn)) {
-      r128Neg(&tn, &tn);
+      r128__neg(&tn, &tn);
       sign = !sign;
    }
 
@@ -1793,14 +1826,14 @@ void r128Div(R128 *dst, const R128 *a, const R128 *b)
       }
       return;
    } else if (r128IsNeg(&td)) {
-      r128Neg(&td, &td);
+      r128__neg(&td, &td);
       sign = !sign;
    }
 
    r128__udiv(&tq, &tn, &td);
 
    if (sign) {
-      r128Neg(&tq, &tq);
+      r128__neg(&tq, &tq);
    }
 
    r128Copy(dst, &tq);
@@ -1815,11 +1848,11 @@ void r128Mod(R128 *dst, const R128 *a, const R128 *b)
    R128_ASSERT(a != NULL);
    R128_ASSERT(b != NULL);
 
-   r128Copy(&tn, a);
-   r128Copy(&td, b);
+   R128_SET2(&tn, a->lo, a->hi);
+   R128_SET2(&td, b->lo, b->hi);
 
    if (r128IsNeg(&tn)) {
-      r128Neg(&tn, &tn);
+      r128__neg(&tn, &tn);
       sign = !sign;
    }
 
@@ -1832,7 +1865,7 @@ void r128Mod(R128 *dst, const R128 *a, const R128 *b)
       }
       return;
    } else if (r128IsNeg(&td)) {
-      r128Neg(&td, &td);
+      r128__neg(&td, &td);
       sign = !sign;
    }
 
@@ -1858,7 +1891,7 @@ void r128Rsqrt(R128 *dst, const R128 *v)
       return;
    }
 
-   r128Copy(&x, v);
+   R128_SET2(&x, v->lo, v->hi);
 
    // get initial estimate
    if (x.hi) {
@@ -1890,7 +1923,7 @@ void r128Rsqrt(R128 *dst, const R128 *v)
       if (newEst.lo == est.lo && newEst.hi == est.hi) {
          break;
       }
-      r128Copy(&est, &newEst);
+      R128_SET2(&est, newEst.lo, newEst.hi);
    }
 
    r128Copy(dst, &est);
@@ -1906,7 +1939,7 @@ void r128Sqrt(R128 *dst, const R128 *v)
       return;
    }
 
-   r128Copy(&x, v);
+   R128_SET2(&x, v->lo, v->hi);
 
    // get initial estimate
    if (x.hi) {
@@ -1932,7 +1965,7 @@ void r128Sqrt(R128 *dst, const R128 *v)
       if (newEst.lo == est.lo && newEst.hi == est.hi) {
          break;
       }
-      r128Copy(&est, &newEst);
+      R128_SET2(&est, newEst.lo, newEst.hi);
    }
 
    r128Copy(dst, &est);
@@ -2002,6 +2035,7 @@ void r128Floor(R128 *dst, const R128 *v)
       dst->hi = v->hi;
    }
    dst->lo = 0;
+   R128_DEBUG_SET(dst);
 }
 
 void r128Ceil(R128 *dst, const R128 *v)
@@ -2015,6 +2049,7 @@ void r128Ceil(R128 *dst, const R128 *v)
       dst->hi = v->hi;
    }
    dst->lo = 0;
+   R128_DEBUG_SET(dst);
 }
 
 #endif   //R128_IMPLEMENTATION

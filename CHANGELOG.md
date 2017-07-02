@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.2.1 - 2017/7/2
+### Fixed
+  Return value of r128ToString functions correctly matches snprintf
+
 ## 1.2.0 - 2017/6/30
 ### Added
   R128_last global variable which shows the result of the last operation as a

@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.2.0
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.2.1
 
 COMPILATION
 -----------
@@ -206,7 +206,8 @@ typedef struct R128ToStringFormat {
 // If precision is specified: at most precision + 22 bytes.
 // If neither is specified: at most 42 bytes.
 //
-// Returns the number of characters written, not including the final null terminator.
+// Returns the number of bytes that would have been written if dst was sufficiently large,
+// not including the final null terminator.
 //
 extern int r128ToStringOpt(char *dst, size_t dstSize, const R128 *v, const R128ToStringFormat *opt);
 
@@ -227,7 +228,8 @@ extern int r128ToStringOpt(char *dst, size_t dstSize, const R128 *v, const R128T
 // If the precision field is specified: at most max(width, precision + 21) + 1 bytes
 // Otherwise: at most max(width, 41) + 1 bytes.
 //
-// Returns the number of characters written, not including the final null terminator.
+// Returns the number of bytes that would have been written if dst was sufficiently large,
+// not including the final null terminator.
 //
 extern int r128ToStringf(char *dst, size_t dstSize, const char *format, const R128 *v);
 
@@ -239,7 +241,8 @@ extern int r128ToStringf(char *dst, size_t dstSize, const char *format, const R1
 //
 // Will write at most 42 bytes (including NUL) to dst.
 //
-// Returns the number of characters written, not including the final null terminator.
+// Returns the number of bytes that would have been written if dst was sufficiently large,
+// not including the final null terminator.
 //
 extern int r128ToString(char *dst, size_t dstSize, const R128 *v);
 
@@ -1101,6 +1104,8 @@ static int r128__format(char *dst, size_t dstSize, const R128 *v, const R128ToSt
    R128_ASSERT(v != NULL);
    R128_ASSERT(format != NULL);
 
+   --dstSize;
+
    R128_SET2(&tmp, v->lo, v->hi);
    if (r128IsNeg(&tmp)) {
       r128__neg(&tmp, &tmp);
@@ -1166,7 +1171,7 @@ static int r128__format(char *dst, size_t dstSize, const R128 *v, const R128ToSt
       *cursor++ = digit + '0';
    } while (whole);
 
-#define R128__WRITE(c) if (dstSize-- == 1) goto finish; *dstp++ = c;
+#define R128__WRITE(c) do { if (dstp < dst + dstSize) *dstp = c; ++dstp; } while(0)
 
    padCnt = width - (int)(cursor - buf) - 1;
 
@@ -1231,9 +1236,12 @@ static int r128__format(char *dst, size_t dstSize, const R128 *v, const R128ToSt
 
 #undef R128__WRITE
 
-finish:
-    *dstp = '\0';
-    return (int)(dstp - dst);
+   if (dstp <= dst + dstSize) {
+      *dstp = '\0';
+   } else {
+      dst[dstSize] = '\0';
+   }
+   return (int)(dstp - dst);
 }
 
 void r128FromInt(R128 *dst, R128_S64 v)

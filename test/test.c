@@ -82,6 +82,15 @@ static int testsRun, testsFailed;
    R128_TEST_STRSTREQ(buf1, buf2); \
 } while(0)
 
+#define R128_TEST_INTINTEQ(i1, i2) do { \
+   ++testsRun; \
+   if ((int)(i1) != (int)(i2)) { \
+      PRINT_FAILURE("%s(%d): TEST FAILED: %d != %d\n", \
+         __FILE__, __LINE__, (int)(i1), (int)(i2)); \
+      ++testsFailed; \
+   } \
+} while(0)
+
 static void test_float()
 {
    double a;
@@ -155,32 +164,44 @@ static void test_string()
    char bufb[256];
    R128 a;
    double b;
+   int reta, retb;
 
    b = 0.9999;
    r128FromFloat(&a, b);
 
-   sprintf(bufb, "%5.6f", b);
-   r128ToStringf(bufa, sizeof(bufa), "%5.6f", &a);
+   retb = snprintf(bufb, sizeof(bufb), "%5.6f", b);
+   reta = r128ToStringf(bufa, sizeof(bufa), "%5.6f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
-   sprintf(bufb, "%1.0f", b);
-   r128ToStringf(bufa, sizeof(bufa), "%1.0f", &a);
+   R128_TEST_INTINTEQ(reta, retb);
+   retb = snprintf(bufb, sizeof(bufb), "%1.0f", b);
+   reta = r128ToStringf(bufa, sizeof(bufa), "%1.0f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
-   sprintf(bufb, "%# 3.0f", b);
-   r128ToStringf(bufa, sizeof(bufa), "%# 3.0f", &a);
+   R128_TEST_INTINTEQ(reta, retb);
+   retb = snprintf(bufb, sizeof(bufb), "%# 3.0f", b);
+   reta = r128ToStringf(bufa, sizeof(bufa), "%# 3.0f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
-   sprintf(bufb, "%-20.4f", b);
-   r128ToStringf(bufa, sizeof(bufa), "%-20.4f", &a);
+   R128_TEST_INTINTEQ(reta, retb);
+   retb = snprintf(bufb, sizeof(bufb), "%-20.4f", b);
+   reta = r128ToStringf(bufa, sizeof(bufa), "%-20.4f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
-   sprintf(bufb, "%#+.50f", b);
-   r128ToStringf(bufa, sizeof(bufa), "%#+.50f", &a);
+   R128_TEST_INTINTEQ(reta, retb);
+   retb = snprintf(bufb, sizeof(bufb), "%#+.50f", b);
+   reta = r128ToStringf(bufa, sizeof(bufa), "%#+.50f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
+   R128_TEST_INTINTEQ(reta, retb);
 
    b = (1 / 18446744073709551616.0);
    r128FromFloat(&a, b);
 
-   sprintf(bufb, "%1.200f", b);
-   r128ToStringf(bufa, sizeof(bufa), "%1.200f", &a);
+   retb = snprintf(bufb, sizeof(bufb), "%1.200f", b);
+   reta = r128ToStringf(bufa, sizeof(bufa), "%1.200f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
+   R128_TEST_INTINTEQ(reta, retb);
+
+   retb = snprintf(bufb, sizeof(bufb), "%1.300f", b);
+   reta = r128ToStringf(bufa, sizeof(bufa), "%1.300f", &a);
+   R128_TEST_STRSTREQ(bufa, bufb);
+   R128_TEST_INTINTEQ(reta, retb);
 }
 
 static void test_cmp()

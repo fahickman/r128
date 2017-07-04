@@ -670,23 +670,24 @@ static R128_U32 r128__udiv64(R128_U32 nlo, R128_U32 nhi, R128_U32 d, R128_U32 *r
 
 static void r128__neg(R128 *dst, const R128 *src)
 {
-   unsigned char carry = 0;
-
    R128_ASSERT(dst != NULL);
    R128_ASSERT(src != NULL);
 
 #if R128_INTEL
+   {
+      unsigned char carry = 0;
 #  if R128_64BIT
-   carry = _addcarry_u64(carry, ~src->lo, 1, &dst->lo);
-   carry = _addcarry_u64(carry, ~src->hi, 0, &dst->hi);
+      carry = _addcarry_u64(carry, ~src->lo, 1, &dst->lo);
+      carry = _addcarry_u64(carry, ~src->hi, 0, &dst->hi);
 #  else
-   R128_U32 r0, r1, r2, r3;
-   carry = _addcarry_u32(carry, ~R128_R0(src), 1, &r0);
-   carry = _addcarry_u32(carry, ~R128_R1(src), 0, &r1);
-   carry = _addcarry_u32(carry, ~R128_R2(src), 0, &r2);
-   carry = _addcarry_u32(carry, ~R128_R3(src), 0, &r3);
-   R128_SET4(dst, r0, r1, r2, r3);
+      R128_U32 r0, r1, r2, r3;
+      carry = _addcarry_u32(carry, ~R128_R0(src), 1, &r0);
+      carry = _addcarry_u32(carry, ~R128_R1(src), 0, &r1);
+      carry = _addcarry_u32(carry, ~R128_R2(src), 0, &r2);
+      carry = _addcarry_u32(carry, ~R128_R3(src), 0, &r3);
+      R128_SET4(dst, r0, r1, r2, r3);
 #  endif //R128_64BIT
+}
 #else
    if (src->lo) {
       dst->lo = ~src->lo + 1;
@@ -1741,10 +1742,12 @@ void r128Add(R128 *dst, const R128 *a, const R128 *b)
    R128_SET4(dst, r0, r1, r2, r3);
 #  endif //R128_64BIT
 #else
-   R128_U64 r = a->lo + b->lo;
-   carry = r < a->lo;
-   dst->lo = r;
-   dst->hi = a->hi + b->hi + carry;
+   {
+      R128_U64 r = a->lo + b->lo;
+      carry = r < a->lo;
+      dst->lo = r;
+      dst->hi = a->hi + b->hi + carry;
+   }
 #endif   //R128_INTEL
 
    R128_DEBUG_SET(dst);
@@ -1770,10 +1773,12 @@ void r128Sub(R128 *dst, const R128 *a, const R128 *b)
    R128_SET4(dst, r0, r1, r2, r3);
 #  endif //R128_64BIT
 #else
-   R128_U64 r = a->lo - b->lo;
-   borrow = r > a->lo;
-   dst->lo = r;
-   dst->hi = a->hi - b->hi - borrow;
+   {
+      R128_U64 r = a->lo - b->lo;
+      borrow = r > a->lo;
+      dst->lo = r;
+      dst->hi = a->hi - b->hi - borrow;
+   }
 #endif   //R128_INTEL
 
    R128_DEBUG_SET(dst);

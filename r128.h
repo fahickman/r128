@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.2.1
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.2.2
 
 COMPILATION
 -----------
@@ -813,8 +813,8 @@ static R128_U64 r128__udiv128(R128_U64 nlo, R128_U64 nhi, R128_U64 d, R128_U64 *
 refine1:
    if (r128__umul64(q1, d0) > ((R128_U64)r << 32) + n1) {
       --q1;
-      if (r < ~n1 + 1) {
-         r += n1;
+      if (r < ~d1 + 1) {
+         r += d1;
          goto refine1;
       }
    }
@@ -829,8 +829,8 @@ refine1:
 refine0:
    if (r128__umul64(q0, d0) > ((R128_U64)r << 32) + n0) {
       --q0;
-      if (r < ~n1 + 1) {
-         r += n1;
+      if (r < ~d1 + 1) {
+         r += d1;
          goto refine0;
       }
    }
@@ -1008,8 +1008,8 @@ refine1:
       r128__umul128(&t1, q.hi, d0);
       if (r128__ucmp(&t1, &t0) > 0) {
          --q.hi;
-         if (t0.hi < ~n1 + 1) {
-            t0.hi += n1;
+         if (t0.hi < ~d1 + 1) {
+            t0.hi += d1;
             goto refine1;
          }
       }
@@ -1041,8 +1041,8 @@ refine1:
       r128__umul128(&t1, q.lo, d0);
       if (r128__ucmp(&t1, &t0) > 0) {
          --q.lo;
-         if (t0.hi < ~n1 + 1) {
-            t0.hi += n1;
+         if (t0.hi < ~d1 + 1) {
+            t0.hi += d1;
             goto refine0;
          }
       }
@@ -1080,8 +1080,8 @@ static R128_U64 r128__umod(R128 *n, R128 *d)
       r128__umul128(&t1, q, d0);
       if (r128__ucmp(&t1, &t0) > 0) {
          --q;
-         if (t0.hi < ~n1 + 1) {
-            t0.hi += n1;
+         if (t0.hi < ~d1 + 1) {
+            t0.hi += d1;
             goto refine1;
          }
       }

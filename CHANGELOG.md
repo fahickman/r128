@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.2.2 - 2017/7/4
+### Fixed
+  Warnings on non-intel platforms
+  Another division bug
+
 ## 1.2.1 - 2017/7/2
 ### Fixed
   Return value of r128ToString functions correctly matches snprintf

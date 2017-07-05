@@ -1924,7 +1924,7 @@ void r128Rsqrt(R128 *dst, const R128 *v)
    r128Shr(&x, &x, 1);
 
    // Newton-Raphson iterate
-   for (i = 0; i < 20; ++i) {
+   for (i = 0; i < 7; ++i) {
       R128 newEst;
 
       // newEst = est * (threeHalves - (x / 2) * est * est);

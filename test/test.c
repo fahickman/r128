@@ -1,7 +1,9 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 
 #define R128_IMPLEMENTATION
-#define R128_DEBUG_VIS
+#ifndef NDEBUG
+#  define R128_DEBUG_VIS
+#endif
 #include "../r128.h"
 
 #include <math.h>

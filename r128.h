@@ -1540,36 +1540,33 @@ void r128Shl(R128 *dst, const R128 *src, int amount)
 #ifdef _M_IX86
    __asm {
       // load src
-      mov ebx, dword ptr[src]
+      mov edx, dword ptr[src]
       mov ecx, amount
 
-      mov edi, dword ptr[ebx + 12]
-      mov esi, dword ptr[ebx + 8]
-      mov edx, dword ptr[ebx + 4]
-      mov eax, dword ptr[ebx]
-
-      shl ecx, 3        // ch = amount / 32
-      shr cl, 3         // cl = amount mod 32
+      mov edi, dword ptr[edx]
+      mov esi, dword ptr[edx + 4]
+      mov ebx, dword ptr[edx + 8]
+      mov eax, dword ptr[edx + 12]
 
       // shift mod 32
-      shld edi, esi, cl
-      shld esi, edx, cl
-      shld edx, eax, cl
-      shl eax, cl
+      shld eax, ebx, cl
+      shld ebx, esi, cl
+      shld esi, edi, cl
+      shl edi, cl
 
       // clear out low 12 bytes of stack
-      xor ebx, ebx
-      mov dword ptr[r], ebx
-      mov dword ptr[r + 4], ebx
-      mov dword ptr[r + 8], ebx
+      xor edx, edx
+      mov dword ptr[r], edx
+      mov dword ptr[r + 4], edx
+      mov dword ptr[r + 8], edx
 
-      // store shifted amount offset by ch*4
-      shr ecx, 6
-      and ecx, 15
-      mov dword ptr[r + ecx + 0], eax
-      mov dword ptr[r + ecx + 4], edx
-      mov dword ptr[r + ecx + 8], esi
-      mov dword ptr[r + ecx + 12], edi
+      // store shifted amount offset by count/32 bits
+      shr ecx, 5
+      and ecx, 3
+      mov dword ptr[r + ecx * 4 + 0], edi
+      mov dword ptr[r + ecx * 4 + 4], esi
+      mov dword ptr[r + ecx * 4 + 8], ebx
+      mov dword ptr[r + ecx * 4 + 12], eax
    }
 #else
 
@@ -1605,37 +1602,34 @@ void r128Shr(R128 *dst, const R128 *src, int amount)
 #ifdef _M_IX86
    __asm {
       // load src
-      mov ebx, dword ptr[src]
+      mov edx, dword ptr[src]
       mov ecx, amount
 
-      mov edi, dword ptr[ebx + 12]
-      mov esi, dword ptr[ebx + 8]
-      mov edx, dword ptr[ebx + 4]
-      mov eax, dword ptr[ebx]
-
-      shl ecx, 3        // ch = amount / 32
-      shr cl, 3         // cl = amount mod 32
+      mov edi, dword ptr[edx]
+      mov esi, dword ptr[edx + 4]
+      mov ebx, dword ptr[edx + 8]
+      mov eax, dword ptr[edx + 12]
 
       // shift mod 32
-      shrd eax, edx, cl
-      shrd edx, esi, cl
-      shrd esi, edi, cl
-      shr edi, cl
+      shrd edi, esi, cl
+      shrd esi, ebx, cl
+      shrd ebx, eax, cl
+      shr eax, cl
 
       // clear out high 12 bytes of stack
-      xor ebx, ebx
-      mov dword ptr[r + 20], ebx
-      mov dword ptr[r + 24], ebx
-      mov dword ptr[r + 28], ebx
+      xor edx, edx
+      mov dword ptr[r + 20], edx
+      mov dword ptr[r + 24], edx
+      mov dword ptr[r + 28], edx
 
-      // store shifted amount offset by -ch*4
-      shr ecx, 6
-      and ecx, 15
+      // store shifted amount offset by -count/32 bits
+      shr ecx, 5
+      and ecx, 3
       neg ecx
-      mov dword ptr[r + ecx + 16], eax
-      mov dword ptr[r + ecx + 20], edx
-      mov dword ptr[r + ecx + 24], esi
-      mov dword ptr[r + ecx + 28], edi
+      mov dword ptr[r + ecx * 4 + 16], edi
+      mov dword ptr[r + ecx * 4 + 20], esi
+      mov dword ptr[r + ecx * 4 + 24], ebx
+      mov dword ptr[r + ecx * 4 + 28], eax
    }
 #else
    r[2] = src->lo;
@@ -1670,38 +1664,34 @@ void r128Sar(R128 *dst, const R128 *src, int amount)
 #ifdef _M_IX86
    __asm {
       // load src
-      mov ebx, dword ptr[src]
+      mov edx, dword ptr[src]
       mov ecx, amount
 
-      mov edi, dword ptr[ebx + 12]
-      mov esi, dword ptr[ebx + 8]
-      mov edx, dword ptr[ebx + 4]
-      mov eax, dword ptr[ebx]
-
-      shl ecx, 3        // ch = amount / 32
-      shr cl, 3         // cl = amount mod 32
+      mov edi, dword ptr[edx]
+      mov esi, dword ptr[edx + 4]
+      mov ebx, dword ptr[edx + 8]
+      mov eax, dword ptr[edx + 12]
 
       // shift mod 32
-      shrd eax, edx, cl
-      shrd edx, esi, cl
-      shrd esi, edi, cl
-      sar edi, cl
+      shrd edi, esi, cl
+      shrd esi, ebx, cl
+      shrd ebx, eax, cl
+      sar eax, cl
 
       // copy sign to high 12 bytes of stack
-      mov ebx, edi
-      sar ebx, 31
-      mov dword ptr[r + 20], ebx
-      mov dword ptr[r + 24], ebx
-      mov dword ptr[r + 28], ebx
+      cdq
+      mov dword ptr[r + 20], edx
+      mov dword ptr[r + 24], edx
+      mov dword ptr[r + 28], edx
 
-      // store shifted amount offset by -ch*4
-      shr ecx, 6
-      and ecx, 15
+      // store shifted amount offset by -count/32 bits
+      shr ecx, 5
+      and ecx, 3
       neg ecx
-      mov dword ptr[r + ecx + 16], eax
-      mov dword ptr[r + ecx + 20], edx
-      mov dword ptr[r + ecx + 24], esi
-      mov dword ptr[r + ecx + 28], edi
+      mov dword ptr[r + ecx * 4 + 16], edi
+      mov dword ptr[r + ecx * 4 + 20], esi
+      mov dword ptr[r + ecx * 4 + 24], ebx
+      mov dword ptr[r + ecx * 4 + 28], eax
    }
 #else
    r[2] = src->lo;

@@ -1750,7 +1750,7 @@ void r128Sub(R128 *dst, const R128 *a, const R128 *b)
    R128_ASSERT(a != NULL);
    R128_ASSERT(b != NULL);
 
-#if R128_INTEL
+#if R128_INTEL && !defined(_MSC_VER)
 #  if R128_64BIT
    borrow = _subborrow_u64(borrow, a->lo, b->lo, &dst->lo);
    borrow = _subborrow_u64(borrow, a->hi, b->hi, &dst->hi);

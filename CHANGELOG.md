@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.3.0 - 2017/7/22
+### Fixed/Added
+* Fix C++ constructor overload resolution issues by adding a new constructor.
+* Warning fixes.
+
 ## 1.2.2 - 2017/7/4
 ### Fixed
 * Warnings on non-intel platforms

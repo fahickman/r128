@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.2.2
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.3.0
 
 COMPILATION
 -----------
@@ -89,8 +89,9 @@ typedef struct R128 {
 
 #ifdef __cplusplus
    R128();
-   R128(R128_S64);
    R128(double);
+   R128(int);
+   R128(R128_S64);
    R128(R128_U64 low, R128_U64 high);
 
    operator double() const;
@@ -315,14 +316,19 @@ struct numeric_limits<R128>
 
 inline R128::R128() {}
 
-inline R128::R128(R128_S64 v)
+inline R128::R128(double v)
+{
+   r128FromFloat(this, v);
+}
+
+inline R128::R128(int v)
 {
    r128FromInt(this, v);
 }
 
-inline R128::R128(double v)
+inline R128::R128(R128_S64 v)
 {
-   r128FromFloat(this, v);
+   r128FromInt(this, v);
 }
 
 inline R128::R128(R128_U64 low, R128_U64 high)
@@ -756,14 +762,14 @@ static void r128__umul128(R128 *dst, R128_U64 a, R128_U64 b)
 // MSVC x64 provides neither inline assembly nor a div intrinsic, so we do fake
 // "inline assembly" to avoid long division or outline assembly.
 #pragma code_seg(".text")
-__declspec(allocate(".text")) static const char r128__udiv128Code[] = {
+__declspec(allocate(".text")) static const unsigned char r128__udiv128Code[] = {
    0x48, 0x8B, 0xC1,       //mov  rax, rcx
    0x49, 0xF7, 0xF0,       //div  rax, r8
    0x49, 0x89, 0x11,       //mov  qword ptr [r9], rdx
    0xC3                    //ret
 };
 typedef R128_U64 (*r128__udiv128Proc)(R128_U64 nlo, R128_U64 nhi, R128_U64 d, R128_U64 *rem);
-static r128__udiv128Proc r128__udiv128 = (r128__udiv128Proc)r128__udiv128Code;
+static const r128__udiv128Proc r128__udiv128 = (r128__udiv128Proc)(void*)r128__udiv128Code;
 #else
 static R128_U64 r128__udiv128(R128_U64 nlo, R128_U64 nhi, R128_U64 d, R128_U64 *rem)
 {

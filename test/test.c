@@ -211,8 +211,8 @@ static void test_cmp()
 {
    R128 a = { R128_LIT_U64(0x8000000000000000), 1 };     //1.5
    R128 b = { R128_LIT_U64(0x4000000000000000), 1 };     //1.25
-   R128 c = { R128_LIT_U64(0x8000000000000000), R128_LIT_U64(0xffffffffffffffff) };    //-1.5
-   R128 d = { R128_LIT_U64(0x4000000000000000), R128_LIT_U64(0xffffffffffffffff) };    //-1.25
+   R128 c = { R128_LIT_U64(0x8000000000000000), R128_LIT_U64(0xffffffffffffffff) };    //-0.5
+   R128 d = { R128_LIT_U64(0x4000000000000000), R128_LIT_U64(0xffffffffffffffff) };    //-0.75
    int cmp;
 
    cmp = r128Cmp(&a, &a);

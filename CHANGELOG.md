@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.4.0 - 2018/2/22
+### Added
+* R128_STDC_ONLY optional define to exclude Intel intrinsics and inline asm.
+### Fixed
+* Removed MSVC workaround in r128Sub.
+
 ## 1.3.0 - 2017/7/22
 ### Fixed/Added
 * Fix C++ constructor overload resolution issues by adding a new constructor.

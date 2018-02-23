@@ -44,6 +44,11 @@ compile with a pre-C99 compiler that supports 64-bit integers. The only two
 changes needed are providing suitable typedefs for int64_t and uint64_t and
 replacing the ull integer suffix with the appropriate one for your compiler.
 
+On x86 and x64 targets, Intel intrinsics are used for speed. If your compiler
+does not support these intrinsics, you can add
+#define R128_STDC_ONLY
+in your implementation file before including r128.h.
+
 The only C runtime library functionality used by this library is <assert.h>.
 This can be avoided by defining an R128_ASSERT macro in your implementation
 file. Since this library uses 64-bit arithmetic, this may implicitly add a

@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.3.0
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.4.0
 
 COMPILATION
 -----------
@@ -14,9 +14,12 @@ to force the library to use a custom assert macro.
 
 COMPILER/LIBRARY SUPPORT
 ------------------------
-This library requires a C89 with support for 64-bit integers. If your compiler
-does not support the long long data type, the R128_U64, etc. macros must be set
-appropriately.
+This library requires a C89 compiler with support for 64-bit integers. If your
+compiler does not support the long long data type, the R128_U64, etc. macros
+must be set appropriately. On x86 and x64 targets, Intel intrinsics are used
+for speed. If your compiler does not support these intrinsics, you can add
+#define R128_STDC_ONLY
+in your implementation file before including r128.h.
 
 The only C runtime library functionality used by this library is <assert.h>.
 This can be avoided by defining an R128_ASSERT macro in your implementation
@@ -560,22 +563,34 @@ static inline bool operator!=(const R128 &lhs, const R128 &rhs)
 #if defined(_M_X64)
 #  define R128_INTEL 1
 #  define R128_64BIT 1
-#  include <intrin.h>
+#  ifndef R128_STDC_ONLY
+#     include <intrin.h>
+#  endif
 #elif defined(__x86_64__)
 #  define R128_INTEL 1
 #  define R128_64BIT 1
-#  include <x86intrin.h>
+#  ifndef R128_STDC_ONLY
+#     include <x86intrin.h>
+#  endif
 #elif defined(_M_IX86)
 #  define R128_INTEL 1
-#  include <intrin.h>
+#  ifndef R128_STDC_ONLY
+#     include <intrin.h>
+#  endif
 #elif defined(__i386__)
 #  define R128_INTEL 1
-#  include <x86intrin.h>
+#  ifndef R128_STDC_ONLY
+#     include <x86intrin.h>
+#  endif
 #elif defined(_M_ARM)
-#  include <intrin.h>
+#  ifndef R128_STDC_ONLY
+#     include <intrin.h>
+#  endif
 #elif defined(_M_ARM64)
 #  define R128_64BIT 1
-#  include <intrin.h>
+#  ifndef R128_STDC_ONLY
+#     include <intrin.h>
+#  endif
 #elif defined(__aarch64__)
 #  define R128_64BIT 1
 #endif
@@ -616,7 +631,16 @@ char R128_last[42];
 
 static int r128__clz64(R128_U64 x)
 {
-#ifdef _M_X64
+#if defined(R128_STDC_ONLY)
+   R128_U64 n = 64, y;
+   y = x >> 32; if (y) { n -= 32; x = y; }
+   y = x >> 16; if (y) { n -= 16; x = y; }
+   y = x >>  8; if (y) { n -=  8; x = y; }
+   y = x >>  4; if (y) { n -=  4; x = y; }
+   y = x >>  2; if (y) { n -=  2; x = y; }
+   y = x >>  1; if (y) { n -=  1; x = y; }
+   return (int)(n - x);
+#elif defined(_M_X64)
    unsigned long idx;
    if (_BitScanReverse64(&idx, x)) {
       return 63 - (int)idx;
@@ -641,7 +665,7 @@ static int r128__clz64(R128_U64 x)
 // 32*32->64
 static R128_U64 r128__umul64(R128_U32 a, R128_U32 b)
 {
-#  if defined(_M_IX86)
+#  if defined(_M_IX86) && !defined(R128_STDC_ONLY)
    return __emulu(a, b);
 #  else
    return a * (R128_U64)b;
@@ -651,7 +675,7 @@ static R128_U64 r128__umul64(R128_U32 a, R128_U32 b)
 // 64/32->32
 static R128_U32 r128__udiv64(R128_U32 nlo, R128_U32 nhi, R128_U32 d, R128_U32 *rem)
 {
-#  if defined(_M_IX86)
+#  if defined(_M_IX86) && !defined(R128_STDC_ONLY)
    __asm {
       mov eax, nlo
       mov edx, nhi
@@ -659,7 +683,7 @@ static R128_U32 r128__udiv64(R128_U32 nlo, R128_U32 nhi, R128_U32 d, R128_U32 *r
       mov ecx, rem
       mov dword ptr [ecx], edx
    }
-#  elif defined(__i386__)
+#  elif defined(__i386__) && !defined(R128_STDC_ONLY)
    R128_U32 q, r;
    __asm("divl %4"
       : "=a"(q), "=d"(r)
@@ -672,6 +696,14 @@ static R128_U32 r128__udiv64(R128_U32 nlo, R128_U32 nhi, R128_U32 d, R128_U32 *r
    return (R128_U32)(n64 / d);
 #  endif
 }
+#elif defined(R128_STDC_ONLY)
+#define r128__umul64(a, b) ((a) * (R128_U64)(b))
+static R128_U32 r128__udiv64(R128_U32 nlo, R128_U32 nhi, R128_U32 d, R128_U32 *rem)
+{
+   R128_U64 n64 = ((R128_U64)nhi << 32) | nlo;
+   *rem = (R128_U32)(n64 % d);
+   return (R128_U32)(n64 / d);
+}
 #endif   //!R128_64BIT
 
 static void r128__neg(R128 *dst, const R128 *src)
@@ -679,7 +711,7 @@ static void r128__neg(R128 *dst, const R128 *src)
    R128_ASSERT(dst != NULL);
    R128_ASSERT(src != NULL);
 
-#if R128_INTEL
+#if R128_INTEL && !defined(R128_STDC_ONLY)
    {
       unsigned char carry = 0;
 #  if R128_64BIT
@@ -708,9 +740,9 @@ static void r128__neg(R128 *dst, const R128 *src)
 // 64*64->128
 static void r128__umul128(R128 *dst, R128_U64 a, R128_U64 b)
 {
-#if defined(_M_X64)
+#if defined(_M_X64) && !defined(R128_STDC_ONLY)
    dst->lo = _umul128(a, b, &dst->hi);
-#elif defined(__x86_64__)
+#elif defined(__x86_64__) && !defined(R128_STDC_ONLY)
    unsigned __int128 p0 = a * (unsigned __int128)b;
    dst->hi = (R128_U64)(p0 >> 64);
    dst->lo = (R128_U64)p0;
@@ -727,7 +759,7 @@ static void r128__umul128(R128 *dst, R128_U64 a, R128_U64 b)
    p3 = r128__umul64(ahi, bhi);
 
    {
-#if R128_INTEL
+#if R128_INTEL && !defined(R128_STDC_ONLY)
       R128_U32 r0, r1, r2, r3;
       unsigned char carry;
 
@@ -758,7 +790,7 @@ static void r128__umul128(R128 *dst, R128_U64 a, R128_U64 b)
 }
 
 // 128/64->64
-#ifdef _M_X64
+#if defined(_M_X64) && !defined(R128_STDC_ONLY)
 // MSVC x64 provides neither inline assembly nor a div intrinsic, so we do fake
 // "inline assembly" to avoid long division or outline assembly.
 #pragma code_seg(".text")
@@ -773,7 +805,7 @@ static const r128__udiv128Proc r128__udiv128 = (r128__udiv128Proc)(void*)r128__u
 #else
 static R128_U64 r128__udiv128(R128_U64 nlo, R128_U64 nhi, R128_U64 d, R128_U64 *rem)
 {
-#ifdef __x86_64__
+#if defined(__x86_64__) && !defined(R128_STDC_ONLY)
    R128_U64 q, r;
    __asm("divq %4"
       : "=a"(q), "=d"(r)
@@ -872,7 +904,7 @@ static int r128__ucmp(const R128 *a, const R128 *b)
 
 static void r128__umul(R128 *dst, const R128 *a, const R128 *b)
 {
-#ifdef _M_X64
+#if defined(_M_X64) && !defined(R128_STDC_ONLY)
    R128_U64 t0, t1;
    R128_U64 lo, hi = 0;
    unsigned char carry;
@@ -893,7 +925,7 @@ static void r128__umul(R128 *dst, const R128 *a, const R128 *b)
    hi += t0;
 
    R128_SET2(dst, lo, hi);
-#elif defined(__x86_64__)
+#elif defined(__x86_64__) && !defined(R128_STDC_ONLY)
    unsigned __int128 p0, p1, p2, p3;
    p0 = a->lo * (unsigned __int128)b->lo;
    p1 = a->lo * (unsigned __int128)b->hi;
@@ -1543,7 +1575,7 @@ void r128Shl(R128 *dst, const R128 *src, int amount)
    R128_ASSERT(dst != NULL);
    R128_ASSERT(src != NULL);
 
-#ifdef _M_IX86
+#if defined(_M_IX86) && !defined(R128_STDC_ONLY)
    __asm {
       // load src
       mov edx, dword ptr[src]
@@ -1605,7 +1637,7 @@ void r128Shr(R128 *dst, const R128 *src, int amount)
    R128_ASSERT(dst != NULL);
    R128_ASSERT(src != NULL);
 
-#ifdef _M_IX86
+#if defined(_M_IX86) && !defined(R128_STDC_ONLY)
    __asm {
       // load src
       mov edx, dword ptr[src]
@@ -1667,7 +1699,7 @@ void r128Sar(R128 *dst, const R128 *src, int amount)
    R128_ASSERT(dst != NULL);
    R128_ASSERT(src != NULL);
 
-#ifdef _M_IX86
+#if defined(_M_IX86) && !defined(R128_STDC_ONLY)
    __asm {
       // load src
       mov edx, dword ptr[src]
@@ -1725,7 +1757,7 @@ void r128Add(R128 *dst, const R128 *a, const R128 *b)
    R128_ASSERT(a != NULL);
    R128_ASSERT(b != NULL);
 
-#if R128_INTEL
+#if R128_INTEL && !defined(R128_STDC_ONLY)
 #  if R128_64BIT
    carry = _addcarry_u64(carry, a->lo, b->lo, &dst->lo);
    carry = _addcarry_u64(carry, a->hi, b->hi, &dst->hi);
@@ -1756,7 +1788,7 @@ void r128Sub(R128 *dst, const R128 *a, const R128 *b)
    R128_ASSERT(a != NULL);
    R128_ASSERT(b != NULL);
 
-#if R128_INTEL && !defined(_MSC_VER)
+#if R128_INTEL && !defined(R128_STDC_ONLY)
 #  if R128_64BIT
    borrow = _subborrow_u64(borrow, a->lo, b->lo, &dst->lo);
    borrow = _subborrow_u64(borrow, a->hi, b->hi, &dst->hi);

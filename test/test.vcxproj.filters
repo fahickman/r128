@@ -6,4 +6,8 @@
   <ItemGroup>
     <ClInclude Include="..\r128.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\CHANGELOG.md" />
+    <None Include="..\README.md" />
+  </ItemGroup>
 </Project>

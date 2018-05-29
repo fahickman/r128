@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.4.1 - 2018/5/30
+### Fixed
+* Fix rare assertion in division.
+
 ## 1.4.0 - 2018/2/22
 ### Added
 * R128_STDC_ONLY optional define to exclude Intel intrinsics and inline asm.

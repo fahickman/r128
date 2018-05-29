@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.4.0
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.4.1
 
 COMPILATION
 -----------
@@ -846,8 +846,13 @@ static R128_U64 r128__udiv128(R128_U64 nlo, R128_U64 nhi, R128_U64 d, R128_U64 *
    d0 = (R128_U32)d;
 
    // first digit
-   R128_ASSERT(n3 < d1);
-   q1 = r128__udiv64(n2, n3, d1, &r);
+   R128_ASSERT(n3 <= d1);
+   if (n3 < d1) {
+      q1 = r128__udiv64(n2, n3, d1, &r);
+   } else {
+      q1 = 0xffffffffu;
+      r = n2 + d1;
+   }
 refine1:
    if (r128__umul64(q1, d0) > ((R128_U64)r << 32) + n1) {
       --q1;
@@ -862,8 +867,13 @@ refine1:
    n1 = (R128_U32)tmp;
 
    // second digit
-   R128_ASSERT(n2 < d1);
-   q0 = r128__udiv64(n1, n2, d1, &r);
+   R128_ASSERT(n2 <= d1);
+   if (n2 < d1) {
+      q0 = r128__udiv64(n1, n2, d1, &r);
+   } else {
+      q0 = 0xffffffffu;
+      r = n1 + d1;
+   }
 refine0:
    if (r128__umul64(q0, d0) > ((R128_U64)r << 32) + n0) {
       --q0;
@@ -1036,11 +1046,16 @@ static void r128__udiv(R128 *quotient, const R128 *dividend, const R128 *divisor
    }
 
    // first digit
-   R128_ASSERT(n3 < d1);
+   R128_ASSERT(n3 <= d1);
    {
       R128 t0, t1;
       t0.lo = n1;
-      q.hi = r128__udiv128(n2, n3, d1, &t0.hi);
+      if (n3 < d1) {
+         q.hi = r128__udiv128(n2, n3, d1, &t0.hi);
+      } else {
+         q.hi = R128_LIT_U64(0xffffffffffffffff);
+         t0.hi = n2 + d1;
+      }
 
 refine1:
       r128__umul128(&t1, q.hi, d0);
@@ -1069,11 +1084,16 @@ refine1:
    n1 = tmp.lo;
 
    // second digit
-   R128_ASSERT(n2 < d1);
+   R128_ASSERT(n2 <= d1);
    {
       R128 t0, t1;
       t0.lo = 0;
-      q.lo = r128__udiv128(n1, n2, d1, &t0.hi);
+      if (n2 < d1) {
+         q.lo = r128__udiv128(n1, n2, d1, &t0.hi);
+      } else {
+         q.lo = R128_LIT_U64(0xffffffffffffffff);
+         t0.hi = n1 + d1;
+      }
 
    refine0:
       r128__umul128(&t1, q.lo, d0);

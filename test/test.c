@@ -392,6 +392,10 @@ static void test_sqrt()
    r128FromFloat(&a, 0.999);
    r128Rsqrt(&b, &a);
    R128_TEST_STREQ(b, "1.00050037531277368426");
+
+   r128FromInt(&a, 267794469);
+   r128Sqrt(&b, &a);
+   R128_TEST_STREQ(b, "16364.42693772073400801913");
 }
 
 int main()

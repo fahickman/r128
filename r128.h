@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.4.1
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.4.2
 
 COMPILATION
 -----------
@@ -283,7 +283,7 @@ struct numeric_limits<R128>
    static R128 max() throw() { return R128_max; }
 
    static const int digits = 127;
-   static const int digits10 = 39;
+   static const int digits10 = 38;
    static const bool is_signed = true;
    static const bool is_integer = false;
    static const bool is_exact = false;

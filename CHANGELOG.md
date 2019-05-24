@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.4.2 - 2019/5/24
+### Fixed
+* Fix incorrect numeric_limits::digits10 value.
+
 ## 1.4.1 - 2018/5/30
 ### Fixed
 * Fix rare assertion in division.

@@ -675,7 +675,10 @@ static R128_U64 r128__umul64(R128_U32 a, R128_U32 b)
 // 64/32->32
 static R128_U32 r128__udiv64(R128_U32 nlo, R128_U32 nhi, R128_U32 d, R128_U32 *rem)
 {
-#  if defined(_M_IX86) && !defined(R128_STDC_ONLY)
+#  if defined(_M_IX86) && (_MSC_VER >= 1920) && !defined(R128_STDC_ONLY)
+   unsigned __int64 n = ((unsigned __int64)nhi << 32) | nlo;
+   return _udiv64(n, d, rem);
+#  elif defined(_M_IX86) && !defined(R128_STDC_ONLY)
    __asm {
       mov eax, nlo
       mov edx, nhi
@@ -790,8 +793,8 @@ static void r128__umul128(R128 *dst, R128_U64 a, R128_U64 b)
 }
 
 // 128/64->64
-#if defined(_M_X64) && !defined(R128_STDC_ONLY)
-// MSVC x64 provides neither inline assembly nor a div intrinsic, so we do fake
+#if defined(_M_X64) && (_MSC_VER < 1920) && !defined(R128_STDC_ONLY)
+// MSVC x64 provides neither inline assembly nor (pre-2019) a div intrinsic, so we do fake
 // "inline assembly" to avoid long division or outline assembly.
 #pragma code_seg(".text")
 __declspec(allocate(".text")) static const unsigned char r128__udiv128Code[] = {
@@ -805,7 +808,9 @@ static const r128__udiv128Proc r128__udiv128 = (r128__udiv128Proc)(void*)r128__u
 #else
 static R128_U64 r128__udiv128(R128_U64 nlo, R128_U64 nhi, R128_U64 d, R128_U64 *rem)
 {
-#if defined(__x86_64__) && !defined(R128_STDC_ONLY)
+#if defined(_M_X64) && !defined(R128_STDC_ONLY)
+   return _udiv128(nhi, nlo, d, rem);
+#elif defined(__x86_64__) && !defined(R128_STDC_ONLY)
    R128_U64 q, r;
    __asm("divq %4"
       : "=a"(q), "=d"(r)

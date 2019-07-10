@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.4.2
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.4.3
 
 COMPILATION
 -----------
@@ -640,7 +640,7 @@ static int r128__clz64(R128_U64 x)
    y = x >>  2; if (y) { n -=  2; x = y; }
    y = x >>  1; if (y) { n -=  1; x = y; }
    return (int)(n - x);
-#elif defined(_M_X64)
+#elif defined(_M_X64) || defined(_M_ARM64)
    unsigned long idx;
    if (_BitScanReverse64(&idx, x)) {
       return 63 - (int)idx;
@@ -667,6 +667,8 @@ static R128_U64 r128__umul64(R128_U32 a, R128_U32 b)
 {
 #  if defined(_M_IX86) && !defined(R128_STDC_ONLY)
    return __emulu(a, b);
+#  elif defined(_M_ARM) && !defined(R128_STDC_ONLY)
+   return _arm_umull(a, b);
 #  else
    return a * (R128_U64)b;
 #  endif
@@ -699,7 +701,7 @@ static R128_U32 r128__udiv64(R128_U32 nlo, R128_U32 nhi, R128_U32 d, R128_U32 *r
    return (R128_U32)(n64 / d);
 #  endif
 }
-#elif defined(R128_STDC_ONLY)
+#elif !defined(_M_X64) || defined(R128_STDC_ONLY)
 #define r128__umul64(a, b) ((a) * (R128_U64)(b))
 static R128_U32 r128__udiv64(R128_U32 nlo, R128_U32 nhi, R128_U32 d, R128_U32 *rem)
 {
@@ -728,7 +730,7 @@ static void r128__neg(R128 *dst, const R128 *src)
       carry = _addcarry_u32(carry, ~R128_R3(src), 0, &r3);
       R128_SET4(dst, r0, r1, r2, r3);
 #  endif //R128_64BIT
-}
+   }
 #else
    if (src->lo) {
       dst->lo = ~src->lo + 1;
@@ -745,7 +747,7 @@ static void r128__umul128(R128 *dst, R128_U64 a, R128_U64 b)
 {
 #if defined(_M_X64) && !defined(R128_STDC_ONLY)
    dst->lo = _umul128(a, b, &dst->hi);
-#elif defined(__x86_64__) && !defined(R128_STDC_ONLY)
+#elif R128_64BIT && !defined(_MSC_VER) && !defined(R128_STDC_ONLY)
    unsigned __int128 p0 = a * (unsigned __int128)b;
    dst->hi = (R128_U64)(p0 >> 64);
    dst->lo = (R128_U64)p0;

@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.4.3 - 2019/7/10
+### Fixed
+* Fix MSVC ARM64 compile errors
+### Changed
+* Use MSVC 2019 intrinsics for long division. Produces slightly bettter code.
+
 ## 1.4.2 - 2019/5/24
 ### Fixed
 * Fix incorrect numeric_limits::digits10 value.

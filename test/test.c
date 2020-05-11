@@ -6,6 +6,11 @@
 #ifndef NDEBUG
 #  define R128_DEBUG_VIS
 #endif
+
+#ifdef __MINGW32__
+#  define __USE_MINGW_ANSI_STDIO 1 // force standard sprintf precision
+#endif
+
 #include "../r128.h"
 
 #include <math.h>

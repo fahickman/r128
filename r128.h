@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.4.3
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.4.4
 
 COMPILATION
 -----------
@@ -76,8 +76,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #  include <stdint.h>
 #  define R128_S32 int32_t
 #  define R128_U32 uint32_t
-#  define R128_S64 int64_t
-#  define R128_U64 uint64_t
+#  define R128_S64 long long
+#  define R128_U64 unsigned long long
 #  define R128_LIT_S64(x) x##ll
 #  define R128_LIT_U64(x) x##ull
 #endif

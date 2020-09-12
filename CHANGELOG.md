@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.4.4 - 2020/9/12
+### Fixed
+* Gcc/clang compile warnings
+* MINGW compile errors
+
 ## 1.4.3 - 2019/7/10
 ### Fixed
 * Fix MSVC ARM64 compile errors

@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.5.0 - 2021/9/02
+### Fixed
+* r128FromString: correctly set endptr in strings with a decimal point.
+### Added
+* r128Abs, and r128Nabs.
+* ARM and ARM64 tests
+
 ## 1.4.4 - 2020/9/12
 ### Fixed
 * Gcc/clang compile warnings

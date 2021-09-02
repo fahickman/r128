@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.4.4
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.5.0
 
 COMPILATION
 -----------

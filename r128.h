@@ -1413,15 +1413,15 @@ void r128FromString(R128 *dst, const char *s, char **endptr)
          }
       }
 
-      for (--s; s >= exp; --s) {
+      for (const char *c = s - 1; c >= exp; --c) {
          R128_U64 digit, unused;
 
-         if ('0' <= *s && *s <= '9') {
-            digit = *s - '0';
-         } else if ('a' <= *s && *s <= 'f') {
-            digit = *s - 'a' + 10;
+         if ('0' <= *c && *c <= '9') {
+            digit = *c - '0';
+         } else if ('a' <= *c && *c <= 'f') {
+            digit = *c - 'a' + 10;
          } else {
-            digit = *s - 'A' + 10;
+            digit = *c - 'A' + 10;
          }
 
          lo = r128__udiv128(lo, digit, base, &unused);

@@ -170,46 +170,61 @@ static void test_string()
 {
    char bufa[256];
    char bufb[256];
-   R128 a;
-   double b;
+   R128 a, b;
+   double d;
    int reta, retb;
+   char *endptr;
 
-   b = 0.9999;
-   r128FromFloat(&a, b);
+   d = 0.9999;
+   r128FromFloat(&a, d);
 
-   retb = snprintf(bufb, sizeof(bufb), "%5.6f", b);
+   retb = snprintf(bufb, sizeof(bufb), "%5.6f", d);
    reta = r128ToStringf(bufa, sizeof(bufa), "%5.6f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
    R128_TEST_INTINTEQ(reta, retb);
-   retb = snprintf(bufb, sizeof(bufb), "%1.0f", b);
+   retb = snprintf(bufb, sizeof(bufb), "%1.0f", d);
    reta = r128ToStringf(bufa, sizeof(bufa), "%1.0f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
    R128_TEST_INTINTEQ(reta, retb);
-   retb = snprintf(bufb, sizeof(bufb), "%# 3.0f", b);
+   retb = snprintf(bufb, sizeof(bufb), "%# 3.0f", d);
    reta = r128ToStringf(bufa, sizeof(bufa), "%# 3.0f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
    R128_TEST_INTINTEQ(reta, retb);
-   retb = snprintf(bufb, sizeof(bufb), "%-20.4f", b);
+   retb = snprintf(bufb, sizeof(bufb), "%-20.4f", d);
    reta = r128ToStringf(bufa, sizeof(bufa), "%-20.4f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
    R128_TEST_INTINTEQ(reta, retb);
-   retb = snprintf(bufb, sizeof(bufb), "%#+.50f", b);
+   retb = snprintf(bufb, sizeof(bufb), "%#+.50f", d);
    reta = r128ToStringf(bufa, sizeof(bufa), "%#+.50f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
    R128_TEST_INTINTEQ(reta, retb);
 
-   b = (1 / 18446744073709551616.0);
-   r128FromFloat(&a, b);
+   d = (1 / 18446744073709551616.0);
+   r128FromFloat(&a, d);
 
-   retb = snprintf(bufb, sizeof(bufb), "%1.200f", b);
+   retb = snprintf(bufb, sizeof(bufb), "%1.200f", d);
    reta = r128ToStringf(bufa, sizeof(bufa), "%1.200f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
    R128_TEST_INTINTEQ(reta, retb);
 
-   retb = snprintf(bufb, sizeof(bufb), "%1.300f", b);
+   retb = snprintf(bufb, sizeof(bufb), "%1.300f", d);
    reta = r128ToStringf(bufa, sizeof(bufa), "%1.300f", &a);
    R128_TEST_STRSTREQ(bufa, bufb);
    R128_TEST_INTINTEQ(reta, retb);
+
+   r128FromInt(&b, 1);
+   r128FromString(&a, "1", &endptr);
+   R128_TEST_EQ(a, b);
+   R128_TEST_INTINTEQ(*endptr, '\0');
+   r128FromString(&a, "+1.", &endptr);
+   R128_TEST_INTINTEQ(*endptr, '\0');
+   R128_TEST_EQ(a, b);
+   r128FromString(&a, "1.0", &endptr);
+   R128_TEST_INTINTEQ(*endptr, '\0');
+   R128_TEST_EQ(a, b);
+   r128FromString(&a, "1.0 xxxxxxx", &endptr);
+   R128_TEST_INTINTEQ(*endptr, ' ');
+   R128_TEST_EQ(a, b);
 }
 
 static void test_cmp()

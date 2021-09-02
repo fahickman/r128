@@ -227,6 +227,34 @@ static void test_string()
    R128_TEST_EQ(a, b);
 }
 
+static void test_sign()
+{
+    R128 a, b, c;
+    r128FromFloat(&a, -4.25);
+    r128FromFloat(&b, 4.25);
+
+    R128_TEST_INTINTEQ(r128IsNeg(&a), 1);
+    R128_TEST_INTINTEQ(r128IsNeg(&b), 0);
+
+    r128Neg(&c, &a);
+    R128_TEST_EQ(c, b);
+
+    r128Neg(&c, &b);
+    R128_TEST_EQ(c, a);
+
+    r128Abs(&c, &a);
+    R128_TEST_EQ(c, b);
+
+    r128Abs(&c, &b);
+    R128_TEST_EQ(c, b);
+
+    r128Nabs(&c, &a);
+    R128_TEST_EQ(c, a);
+
+    r128Nabs(&c, &b);
+    R128_TEST_EQ(c, a);
+}
+
 static void test_cmp()
 {
    R128 a = { R128_LIT_U64(0x8000000000000000), 1 };     //1.5
@@ -422,6 +450,7 @@ int main()
 {
    test_float();
    test_string();
+   test_sign();
    test_cmp();
    test_mod();
    test_div();

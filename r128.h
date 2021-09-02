@@ -127,8 +127,10 @@ extern double r128ToFloat(const R128 *v);
 // Copy
 extern void r128Copy(R128 *dst, const R128 *src);
 
-// Negate
-extern void r128Neg(R128 *dst, const R128 *src);
+// Sign manipulation
+extern void r128Neg(R128 *dst, const R128 *v);   // -v
+extern void r128Abs(R128* dst, const R128* v);   // abs(v)
+extern void r128Nabs(R128* dst, const R128* v);  // -abs(v)
 
 // Bitwise operations
 extern void r128Not(R128 *dst, const R128 *src);               // ~a
@@ -1546,10 +1548,38 @@ void r128Copy(R128 *dst, const R128 *src)
    R128_DEBUG_SET(dst);
 }
 
-void r128Neg(R128 *dst, const R128 *src)
+void r128Neg(R128 *dst, const R128 *v)
 {
-   r128__neg(dst, src);
+   r128__neg(dst, v);
    R128_DEBUG_SET(dst);
+}
+
+void r128Abs(R128* dst, const R128* v)
+{
+    R128 sign, inv;
+
+    R128_ASSERT(dst != NULL);
+    R128_ASSERT(v != NULL);
+
+    sign.lo = sign.hi = (R128_U64)(((R128_S64)v->hi) >> 63);
+    inv.lo = v->lo ^ sign.lo;
+    inv.hi = v->hi ^ sign.hi;
+
+    r128Sub(dst, &inv, &sign);
+}
+
+void r128Nabs(R128* dst, const R128* v)
+{
+    R128 sign, inv;
+
+    R128_ASSERT(dst != NULL);
+    R128_ASSERT(v != NULL);
+
+    sign.lo = sign.hi = (R128_U64)(((R128_S64)v->hi) >> 63);
+    inv.lo = v->lo ^ sign.lo;
+    inv.hi = v->hi ^ sign.hi;
+
+    r128Sub(dst, &sign, &inv);
 }
 
 void r128Not(R128 *dst, const R128 *src)

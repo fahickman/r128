@@ -446,6 +446,107 @@ static void test_sqrt()
    R128_TEST_STREQ(b, "16364.42693772073400801913");
 }
 
+static void test_floor()
+{
+   R128 a, b, c;
+
+   r128FromFloat(&a, -1.75);
+
+   r128Floor(&b, &a);
+   r128FromFloat(&c, -2);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, 1.75);
+   r128Floor(&b, &a);
+   r128FromFloat(&c, 1);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, -0.75);
+   r128Floor(&b, &a);
+   r128FromFloat(&c, -1);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, 0.75);
+   r128Floor(&b, &a);
+   r128FromFloat(&c, 0);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, 0);
+   r128Floor(&b, &a);
+   R128_TEST_EQ(b, a);
+
+   r128FromFloat(&a, -2);
+   r128Floor(&b, &a);
+   R128_TEST_EQ(b, a);
+
+   r128FromFloat(&a, 2);
+   r128Floor(&b, &a);
+   R128_TEST_EQ(b, a);
+}
+
+static void test_ceil()
+{
+   R128 a, b, c;
+
+   r128FromFloat(&a, -1.75);
+   r128Ceil(&b, &a);
+   r128FromFloat(&c, -1);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, 1.75);
+   r128Ceil(&b, &a);
+   r128FromFloat(&c, 2);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, -0.75);
+   r128Ceil(&b, &a);
+   r128FromFloat(&c, 0);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, 0.75);
+   r128Ceil(&b, &a);
+   r128FromFloat(&c, 1);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, 0);
+   r128Ceil(&b, &a);
+   R128_TEST_EQ(b, a);
+
+   r128FromFloat(&a, -2);
+   r128Ceil(&b, &a);
+   R128_TEST_EQ(b, a);
+
+   r128FromFloat(&a, 2);
+   r128Ceil(&b, &a);
+   R128_TEST_EQ(b, a);
+}
+
+static void test_int()
+{
+   R128 a;
+
+   r128FromFloat(&a, -1.75);
+   R128_TEST_INTINTEQ(r128ToInt(&a), -1);
+
+   r128FromFloat(&a, 1.75);
+   R128_TEST_INTINTEQ(r128ToInt(&a), 1);
+
+   r128FromFloat(&a, -0.75);
+   R128_TEST_INTINTEQ(r128ToInt(&a), 0);
+
+   r128FromFloat(&a, 0.75);
+   R128_TEST_INTINTEQ(r128ToInt(&a), 0);
+
+   r128FromFloat(&a, 0);
+   R128_TEST_INTINTEQ(r128ToInt(&a), 0);
+
+   r128FromFloat(&a, -2);
+   R128_TEST_INTINTEQ(r128ToInt(&a), -2);
+
+   r128FromFloat(&a, 2);
+   R128_TEST_INTINTEQ(r128ToInt(&a), 2);
+}
+
 int main()
 {
    test_float();
@@ -456,6 +557,9 @@ int main()
    test_div();
    test_shift();
    test_sqrt();
+   test_floor();
+   test_ceil();
+   test_int();
 
    printf("%d tests run. %d tests passed. %d tests failed.\n",
       testsRun, testsRun - testsFailed, testsFailed);

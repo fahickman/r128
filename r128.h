@@ -1,5 +1,5 @@
 /*
-r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.5.0
+r128.h: 128-bit (64.64) signed fixed-point arithmetic. Version 1.5.1
 
 COMPILATION
 -----------
@@ -1443,7 +1443,11 @@ void r128FromString(R128 *dst, const char *s, char **endptr)
 R128_S64 r128ToInt(const R128 *v)
 {
    R128_ASSERT(v != NULL);
-   return (R128_S64)v->hi;
+   if ((R128_S64)v->hi < 0) {
+      return (R128_S64)v->hi + (v->lo != 0);
+   } else {
+      return (R128_S64)v->hi;
+   }
 }
 
 double r128ToFloat(const R128 *v)
@@ -2127,11 +2131,7 @@ void r128Floor(R128 *dst, const R128 *v)
    R128_ASSERT(dst != NULL);
    R128_ASSERT(v != NULL);
 
-   if ((R128_S64)v->hi < 0) {
-      dst->hi = v->hi - (v->lo != 0);
-   } else {
-      dst->hi = v->hi;
-   }
+   dst->hi = v->hi;
    dst->lo = 0;
    R128_DEBUG_SET(dst);
 }
@@ -2141,11 +2141,7 @@ void r128Ceil(R128 *dst, const R128 *v)
    R128_ASSERT(dst != NULL);
    R128_ASSERT(v != NULL);
 
-   if ((R128_S64)v->hi > 0) {
-      dst->hi = v->hi + (v->lo != 0);
-   } else {
-      dst->hi = v->hi;
-   }
+   dst->hi = v->hi + (v->lo != 0);
    dst->lo = 0;
    R128_DEBUG_SET(dst);
 }

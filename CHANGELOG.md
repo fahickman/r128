@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.5.1 - 2022/2/12
+### Fixed
+* Correct behavior of r128ToInt, r128Floor, and r128Ceil for negative numbers.
+
 ## 1.5.0 - 2021/9/02
 ### Fixed
 * r128FromString: correctly set endptr in strings with a decimal point.

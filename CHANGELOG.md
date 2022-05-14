@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.6.0 - 2022/5/14
+### Added
+* r128Round -- round to nearest integer, rounding halfway values away from 0.
+
 ## 1.5.1 - 2022/2/12
 ### Fixed
 * Correct behavior of r128ToInt, r128Floor, and r128Ceil for negative numbers.

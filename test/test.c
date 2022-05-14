@@ -547,6 +547,45 @@ static void test_int()
    R128_TEST_INTINTEQ(r128ToInt(&a), 2);
 }
 
+static void test_round()
+{
+   R128 a, b, c;
+
+   r128FromFloat(&a, 0);
+   r128Round(&b, &a);
+   R128_TEST_EQ(b, a);
+
+   r128FromFloat(&a, 2.3);
+   r128Round(&b, &a);
+   r128FromFloat(&c, 2.0);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, 2.5);
+   r128Round(&b, &a);
+   r128FromFloat(&c, 3.0);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, 2.7);
+   r128Round(&b, &a);
+   r128FromFloat(&c, 3.0);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, -2.3);
+   r128Round(&b, &a);
+   r128FromFloat(&c, -2.0);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, -2.5);
+   r128Round(&b, &a);
+   r128FromFloat(&c, -3.0);
+   R128_TEST_EQ(b, c);
+
+   r128FromFloat(&a, -2.7);
+   r128Round(&b, &a);
+   r128FromFloat(&c, -3.0);
+   R128_TEST_EQ(b, c);
+}
+
 int main()
 {
    test_float();
@@ -560,6 +599,7 @@ int main()
    test_floor();
    test_ceil();
    test_int();
+   test_round();
 
    printf("%d tests run. %d tests passed. %d tests failed.\n",
       testsRun, testsRun - testsFailed, testsFailed);

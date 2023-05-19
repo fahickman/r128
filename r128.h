@@ -1678,7 +1678,7 @@ void r128Shl(R128 *dst, const R128 *src, int amount)
       r[1] = r[0] << (amount - 64);
       r[0] = 0;
    } else if (amount) {
-#  ifdef _M_X64
+#  if defined(_M_X64) && !defined(R128_STDC_ONLY)
       r[1] = __shiftleft128(r[0], r[1], (char) amount);
 #  else
       r[1] = (r[1] << amount) | (r[0] >> (64 - amount));
@@ -1740,7 +1740,7 @@ void r128Shr(R128 *dst, const R128 *src, int amount)
       r[2] = r[3] >> (amount - 64);
       r[3] = 0;
    } else if (amount) {
-#ifdef _M_X64
+#if defined(_M_X64) && !defined(R128_STDC_ONLY)
       r[2] = __shiftright128(r[2], r[3], (char) amount);
 #else
       r[2] = (r[2] >> amount) | (r[3] << (64 - amount));

@@ -672,7 +672,7 @@ static R128_U64 r128__umul64(R128_U32 a, R128_U32 b)
 {
 #  if defined(_M_IX86) && !defined(R128_STDC_ONLY) && !defined(__MINGW32__)
    return __emulu(a, b);
-#  elif defined(_M_ARM) && !defined(R128_STDC_ONLY)
+#  elif defined(_M_ARM) && !defined(R128_STDC_ONLY) && !defined(__MINGW32__)
    return _arm_umull(a, b);
 #  else
    return a * (R128_U64)b;

@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.6.1 - 2024/12/27
+### Fixed
+* Disable deprecated denorm funcs in C++23.
+* Fix mingw/clang-cl intrinsics-related compile errors.
+
 ## 1.6.0 - 2022/5/14
 ### Added
 * r128Round -- round to nearest integer, rounding halfway values away from 0.

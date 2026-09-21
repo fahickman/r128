@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.6.2 - 2026/9/21
+### Fixed
+* Fix compile errors around intrinsics on non-MSVC compilers.
+
 ## 1.6.1 - 2024/12/27
 ### Fixed
 * Disable deprecated denorm funcs in C++23.

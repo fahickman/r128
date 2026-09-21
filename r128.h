@@ -670,9 +670,9 @@ static int r128__clz64(R128_U64 x)
 // 32*32->64
 static R128_U64 r128__umul64(R128_U32 a, R128_U32 b)
 {
-#  if defined(_M_IX86) && !defined(R128_STDC_ONLY) && !defined(__MINGW32__)
+#  if defined(_M_IX86) && defined(_MSC_VER) && !defined(R128_STDC_ONLY)
    return __emulu(a, b);
-#  elif defined(_M_ARM) && !defined(R128_STDC_ONLY) && !defined(__MINGW32__)
+#  elif defined(_M_ARM) && defined(_MSC_VER) && !defined(R128_STDC_ONLY)
    return _arm_umull(a, b);
 #  else
    return a * (R128_U64)b;
@@ -685,7 +685,7 @@ static R128_U32 r128__udiv64(R128_U32 nlo, R128_U32 nhi, R128_U32 d, R128_U32 *r
 #  if defined(_M_IX86) && (_MSC_VER >= 1920) && !defined(R128_STDC_ONLY)
    unsigned __int64 n = ((unsigned __int64)nhi << 32) | nlo;
    return _udiv64(n, d, rem);
-#  elif defined(_M_IX86) && !defined(R128_STDC_ONLY) && !defined(__MINGW32__)
+#  elif defined(_M_IX86) && defined(_MSC_VER) && !defined(R128_STDC_ONLY)
    __asm {
       mov eax, nlo
       mov edx, nhi
@@ -798,7 +798,7 @@ static void r128__umul128(R128 *dst, R128_U64 a, R128_U64 b)
 }
 
 // 128/64->64
-#if defined(_M_X64) && (_MSC_VER < 1920) && !defined(R128_STDC_ONLY) && !defined(__MINGW32__)
+#if defined(_M_X64) && defined(_MSC_VER) && (_MSC_VER < 1920) && !defined(R128_STDC_ONLY)
 // MSVC x64 provides neither inline assembly nor (pre-2019) a div intrinsic, so we do fake
 // "inline assembly" to avoid long division or outline assembly.
 #pragma code_seg(".text")
@@ -813,13 +813,11 @@ static const r128__udiv128Proc r128__udiv128 = (r128__udiv128Proc)(void*)r128__u
 #else
 static R128_U64 r128__udiv128(R128_U64 nlo, R128_U64 nhi, R128_U64 d, R128_U64 *rem)
 {
-#if defined(_M_X64) && !defined(R128_STDC_ONLY) && !defined(__MINGW32__)
+#if defined(_M_X64) && defined(_MSC_VER) && !defined(R128_STDC_ONLY) && !defined(__clang__)
    return _udiv128(nhi, nlo, d, rem);
 #elif defined(__x86_64__) && !defined(R128_STDC_ONLY)
    R128_U64 q, r;
-   __asm("divq %4"
-      : "=a"(q), "=d"(r)
-      : "a"(nlo), "d"(nhi), "X"(d));
+   __asm("divq %4" : "=a"(q), "=d"(r) : "a"(nlo), "d"(nhi), "X"(d));
    *rem = r;
    return q;
 #else
@@ -924,28 +922,6 @@ static int r128__ucmp(const R128 *a, const R128 *b)
 
 static void r128__umul(R128 *dst, const R128 *a, const R128 *b)
 {
-#if defined(_M_X64) && !defined(R128_STDC_ONLY)
-   R128_U64 t0, t1;
-   R128_U64 lo, hi = 0;
-   unsigned char carry;
-
-   t0 = _umul128(a->lo, b->lo, &t1);
-   carry = _addcarry_u64(0, t1, t0 >> 63, &lo);
-   _addcarry_u64(carry, hi, hi, &hi);
-
-   t0 = _umul128(a->lo, b->hi, &t1);
-   carry = _addcarry_u64(0, lo, t0, &lo);
-   _addcarry_u64(carry, hi, t1, &hi);
-
-   t0 = _umul128(a->hi, b->lo, &t1);
-   carry = _addcarry_u64(0, lo, t0, &lo);
-   _addcarry_u64(carry, hi, t1, &hi);
-
-   t0 = _umul128(a->hi, b->hi, &t1);
-   hi += t0;
-
-   R128_SET2(dst, lo, hi);
-#else
    R128 p0, p1, p2, p3, round;
 
    r128__umul128(&p0, a->lo, b->lo);
@@ -964,7 +940,6 @@ static void r128__umul(R128 *dst, const R128 *a, const R128 *b)
    r128Add(&p0, &p0, &p3);
 
    R128_SET2(dst, p0.lo, p0.hi);
-#endif
 }
 
 // Shift d left until the high bit is set, and shift n left by the same amount.
@@ -1627,7 +1602,7 @@ void r128Shl(R128 *dst, const R128 *src, int amount)
    R128_ASSERT(dst != NULL);
    R128_ASSERT(src != NULL);
 
-#if defined(_M_IX86) && !defined(R128_STDC_ONLY) && !defined(__MINGW32__)
+#if defined(_M_IX86) && defined(_MSC_VER) && !defined(R128_STDC_ONLY)
    __asm {
       // load src
       mov edx, dword ptr[src]
@@ -1689,7 +1664,7 @@ void r128Shr(R128 *dst, const R128 *src, int amount)
    R128_ASSERT(dst != NULL);
    R128_ASSERT(src != NULL);
 
-#if defined(_M_IX86) && !defined(R128_STDC_ONLY) && !defined(__MINGW32__)
+#if defined(_M_IX86) && defined(_MSC_VER) && !defined(R128_STDC_ONLY)
    __asm {
       // load src
       mov edx, dword ptr[src]
@@ -1751,7 +1726,7 @@ void r128Sar(R128 *dst, const R128 *src, int amount)
    R128_ASSERT(dst != NULL);
    R128_ASSERT(src != NULL);
 
-#if defined(_M_IX86) && !defined(R128_STDC_ONLY) && !defined(__MINGW32__)
+#if defined(_M_IX86) && defined(_MSC_VER) && !defined(R128_STDC_ONLY)
    __asm {
       // load src
       mov edx, dword ptr[src]
